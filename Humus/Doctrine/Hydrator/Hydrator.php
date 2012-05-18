@@ -1,6 +1,6 @@
 <?php
 
-namespace Humus\Doctrine;
+namespace Humus\Doctrine\Hydrator;
 
 use Zend\Stdlib\ArrayUtils,
     Zend\Stdlib\Hydrator\HydratorInterface,
