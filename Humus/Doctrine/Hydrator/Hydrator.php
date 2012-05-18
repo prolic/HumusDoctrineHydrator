@@ -24,15 +24,16 @@ class Hydrator implements HydratorInterface
     /**
      * @var bool
      */
-    protected $clone = false;
+    protected $clone;;
 
     /**
      * Constructor
      *
      * @param ObjectManager $om
+     * @param bool $clone
      * @return void
      */
-    public function __construct(ObjectManager $om, $clone)
+    public function __construct(ObjectManager $om, $clone = false)
     {
         $this->om = $om;
         $this->clone = (bool) $clone;
@@ -312,4 +313,5 @@ class Hydrator implements HydratorInterface
         return 'set' . implode('',array_map('ucfirst', explode('_',$name)));
     }
 }
+
 
