@@ -6,7 +6,7 @@ use Zend\Stdlib\ArrayUtils,
     Zend\Stdlib\Hydrator\HydratorInterface,
     Zend_Date as Date, // remove
     Zend_Locale_Format, // remove
-    Doctrine\ORM\Mapping\ClassMetadata,
+    Doctrine\Common\Persistence\Mapping\ClassMetadata,
     Doctrine\Common\NotifyPropertyChanged,
     Doctrine\Common\Collections\Collection,
     Doctrine\Common\Persistence\ObjectManager,
@@ -24,7 +24,7 @@ class Hydrator implements HydratorInterface
     /**
      * @var bool
      */
-    protected $clone;;
+    protected $clone;
 
     /**
      * Constructor
@@ -85,7 +85,7 @@ class Hydrator implements HydratorInterface
         $identifier = array_shift($meta->getIdentifier());
         foreach ($data as $field => $value) {
             if ($field == $identifier
-                && !$meta->generatorType !== ClassMetadata::GENERATOR_TYPE_NONE
+                && !$meta->generatorType !== 5 // GENERATOR_TYPE_NONE
             ) { // setting identifier is forbidden
                 continue;
             }
