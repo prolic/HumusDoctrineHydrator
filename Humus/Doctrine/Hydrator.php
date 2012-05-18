@@ -57,7 +57,7 @@ class Hydrator implements HydratorInterface
      *
      * @param  array $data
      * @param  object $object
-     * @return void
+     * @return object
      */
     public function hydrate(array $data, $object)
     {
