@@ -2,16 +2,15 @@
 
 namespace Humus\Doctrine\Hydrator;
 
-use Zend\Stdlib\ArrayUtils,
-    Zend\Stdlib\Hydrator\HydratorInterface,
-    Zend_Date as Date, // remove
-    Zend_Locale_Format, // remove
-    Doctrine\Common\Persistence\Mapping\ClassMetadata,
-    Doctrine\Common\NotifyPropertyChanged,
-    Doctrine\Common\Collections\Collection,
-    Doctrine\Common\Persistence\ObjectManager,
-    DateTime,
-    ReflectionProperty;
+use DateTime;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\NotifyPropertyChanged;
+use Doctrine\Common\Persistence\Mapping\ClassMetadata;
+use Doctrine\Common\Persistence\ObjectManager;
+use ReflectionProperty;
+use ReflectionClass;
+use Zend\Stdlib\ArrayUtils;
+use Zend\Stdlib\Hydrator\HydratorInterface;
 
 class Hydrator implements HydratorInterface
 {
@@ -27,16 +26,33 @@ class Hydrator implements HydratorInterface
     protected $clone;
 
     /**
+     * @var array
+     */
+    protected $extractFields = array();
+
+    /**
+     * @var bool
+     */
+    protected $extractSingleKeysFlat = false;
+
+    /**
      * Constructor
      *
      * @param ObjectManager $om
      * @param bool $clone
-     * @return void
+     * @param array $extractFields
+     * @param bool $extractSingleKeysFlat
      */
-    public function __construct(ObjectManager $om, $clone = false)
-    {
+    public function __construct(
+        ObjectManager $om,
+        $clone = false,
+        array $extractFields = array(),
+        $extractSingleKeysFlat = false
+    ) {
         $this->om = $om;
         $this->clone = (bool) $clone;
+        $this->extractFields = $extractFields;
+        $this->extractSingleKeysFlat = $extractSingleKeysFlat;
     }
 
     /**
@@ -44,13 +60,15 @@ class Hydrator implements HydratorInterface
      *
      * @param  object $object
      * @return array
+     * @throws Exception\InvalidArgumentException
      */
     public function extract($object)
     {
-        if (!is_object($object) || !method_exists($object, 'toArray')) {
-            throw new Exception\InvalidArgumentException('$object must be an object with a method toArray()');
+        if (!is_object($object)) {
+            throw new Exception\InvalidArgumentException('$object must be an object');
         }
-        return $object->toArray();
+        $this->validateEntityName(get_class($object));
+        return $this->toArray($object, $this->extractFields, $this->extractSingleKeysFlat);
     }
 
     /**
@@ -59,12 +77,14 @@ class Hydrator implements HydratorInterface
      * @param  array $data
      * @param  object $object
      * @return object
+     * @throws Exception\InvalidArgumentException
      */
     public function hydrate(array $data, $object)
     {
         if (!is_object($object)) {
             throw new Exception\InvalidArgumentException('$object must be an object');
         }
+        $this->validateEntityName(get_class($object));
         return $this->getEntityFromArray(get_class($object), $data, $this->clone);
     }
 
@@ -102,6 +122,82 @@ class Hydrator implements HydratorInterface
     }
 
     /**
+     * Convert a model class to an array recursively
+     *
+     * @todo comment how to use this method
+     * @todo add quickexample in phpdoc
+     *
+     * @param object|array $object
+     * @param array $fields
+     * @param bool $flastSingleKeys
+     * @param array|bool $array (parameter only used during recursion)
+     * @return array
+     */
+    public function toArray($object, array $fields = array(), $flatSingleKeys = false, $array = false)
+    {
+        $flatSingleKeys = (bool) $flatSingleKeys;
+        if (empty($fields) && is_object($object)) {
+            $reflection = new ReflectionClass(get_class($object));
+            $properties = $reflection->getProperties();
+            foreach($properties as $property) {
+                $fields[] = $property->getName();
+            }
+        }
+        $array = $array ?: $fields;
+        foreach ($array as $key => $value) {
+            foreach ($fields as $fieldName => $fieldValue) {
+                if ($fieldName !== $key && $fieldName !== $value) {
+                    continue;
+                }
+                if (!is_array($fieldValue)) {
+                    unset($array[$fieldName]);
+                    $fieldName = $fieldValue;
+                    $fieldValue = array();
+                } else {
+                    unset($array[$fieldName]);
+                }
+                $key = $this->fromCamelCase($fieldName);
+                $getter = $this->fieldToGetterMethod($key);
+                if (is_callable(array($object, $getter))) {
+                    $value = $object->$getter();
+                } else if (property_exists(get_class($object), $key)) {
+                    $reflectionProperty = new ReflectionProperty(get_class($object), $key);
+                    $reflectionProperty->setAccessible(true);
+                    $value = $reflectionProperty->getValue($object);
+                } else {
+                    continue;
+                }
+                if (is_object($value)) {
+                    if ($value instanceof Collection) {
+                        foreach($value as $collectionValue) {
+                            $array[$key][] = $this->toArray($collectionValue, $fieldValue, $flatSingleKeys);
+                        }
+                    } else if (is_callable(array($value, 'toArray'))) {
+                        $array[$key] = $value->toArray($fieldValue, $flatSingleKeys);
+                    } else if ($value instanceof DateTime) {
+                        $array[$key] = $value->format('Y-m-d H:i:s');
+                    } else {
+                        $array[$key] = $value;
+                    }
+                } else if (is_array($value) && count($value) > 0) {
+                    $array[$key] = $this->toArray($value, $fieldValue, $flatSingleKeys, $value);
+                } else if ($value !== NULL && !is_array($value)) {
+                    $array[$key] = $value;
+                }
+            }
+        }
+        if ($flatSingleKeys) {
+            foreach($fields as $field => $value) {
+                if (!(isset($array[$field]) && is_array($value))) {
+                    continue;
+                }
+                $array[$field] = $this->flatSingleKeys($array[$field]);
+            }
+        }
+        return $array;
+    }
+
+    /**
      * Get entity manager
      *
      * @return ObjectManager
@@ -123,6 +219,7 @@ class Hydrator implements HydratorInterface
         if (!class_exists($entityName)) {
             throw new Exception\InvalidArgumentException('Class ' .$entityName . ' not found');
         }
+        $this->getObjectManager()->getMetadataFactory()->getAllMetadata();
         if (!$this->getObjectManager()->getMetadataFactory()->hasMetadataFor($entityName)) {
             throw new Exception\InvalidArgumentException('Class ' .$entityName . ' is not a valid entity');
         }
@@ -151,10 +248,7 @@ class Hydrator implements HydratorInterface
             case 'date':
                 $value = DateTime::createFromFormat('Y-m-d', $value);
                 break;
-            case 'zenddate':
-                $dateTimeFormatString = Zend_Locale_Format::convertPhpToIsoFormat('Y-m-d H:i:s');
-                $value = new Date($value, $dateTimeFormatString);
-                break;
+            // todo: other mapping types
         }
         $setter = $this->fieldToSetterMethod($field);
         if (method_exists($entity, $setter)) { // use setter
@@ -232,12 +326,7 @@ class Hydrator implements HydratorInterface
      */
     protected function loadEntity($entityName, array $data, $clone = false)
     {
-        if (!class_exists($entityName)) {
-            throw new Exception\InvalidArgumentException('Class ' . $entityName . ' does not exist');
-        }
-        if (!$this->getObjectManager()->getMetadataFactory()->hasMetadataFor($entityName)) {
-            throw new Exception\InvalidArgumentException($entityName . ' is not an entity mapped by the entity manager');
-        }
+        $this->validateEntityName($entityName);
         $identifier = array_shift($this->getObjectManager()->getClassMetadata($entityName)->getIdentifier());
         if (isset($data[$identifier])) {
             $id = $data[$identifier];
@@ -292,6 +381,42 @@ class Hydrator implements HydratorInterface
     }
 
     /**
+     * Flat single keys
+     *
+     * @param array|null $data
+     * @return array
+     */
+    protected function flatSingleKeys($data)
+    {
+        $result = array();
+        if ($data === NULL) {
+            return $data;
+        }
+        if (ArrayUtils::isHashTable($data)) {
+            if (1 === count($data)) {
+                $result = array_shift($data);
+            } else {
+                foreach ($data as $key => $value) {
+                    if (is_array($value)) {
+                        $result[$key] = $this->flatSingleKeys($value);
+                    } else {
+                        $result[$key] = $value;
+                    }
+                }
+            }
+        } else {
+            foreach ($data as $value) {
+                if (is_array($value) && 1 === count($value)) {
+                    $result[] = array_shift($value);
+                } elseif (is_scalar($value)) {
+                    $result[] = $value;
+                }
+            }
+        }
+        return $result;
+    }
+
+    /**
      * Convert to camel case
      *
      * @param $name
@@ -312,6 +437,26 @@ class Hydrator implements HydratorInterface
     {
         return 'set' . implode('',array_map('ucfirst', explode('_',$name)));
     }
+
+    /**
+     * Convert field to getter method
+     *
+     * @param $name
+     * @return string
+     */
+    protected function fieldToGetterMethod($name)
+    {
+        return 'get' . implode('',array_map('ucfirst', explode('_',$name)));
+    }
+
+    /**
+     * Convert from camel case
+     *
+     * @param string $name
+     * @return string
+     */
+    protected function fromCamelCase($name)
+    {
+        return trim(preg_replace_callback('/([A-Z])/', function($c){ return '_'.strtolower($c[1]); }, $name),'_');
+    }
 }
-
-
