@@ -84,24 +84,27 @@ class Hydrator implements HydratorInterface
         if (!is_object($object)) {
             throw new Exception\InvalidArgumentException('$object must be an object');
         }
-        $this->validateEntityName(get_class($object));
-        return $this->getEntityFromArray(get_class($object), $data, $this->clone);
+        return $this->getEntityFromArray($object, $data, $this->clone);
     }
 
     /**
      * Get entity from array
      *
-     * @param string $entityName
+     * @param object|string $entity
      * @param array $data
      * @param bool $clone
      * @return object
      * @throws Exception\InvalidArgumentException
      */
-    protected function getEntityFromArray($entityName, array $data, $clone = false)
+    protected function getEntityFromArray($entity, array $data, $clone = false)
     {
-        $this->validateEntityName($entityName);
-        $meta = $this->getObjectManager()->getClassMetadata($entityName);
-        $entity = $this->loadEntity($entityName, $data, $clone);
+        if (is_string($entity) && false === $clone) {
+            $this->validateEntityName($entity);
+            $meta = $this->getObjectManager()->getClassMetadata($entity);
+            $entity = $this->loadEntity($entity, $data, $clone);
+        } else {
+            $meta = $this->getObjectManager()->getClassMetadata(get_class($entity));
+        }
         $identifier = array_shift($meta->getIdentifier());
         foreach ($data as $field => $value) {
             if ($field == $identifier
@@ -123,9 +126,6 @@ class Hydrator implements HydratorInterface
 
     /**
      * Convert a model class to an array recursively
-     *
-     * @todo comment how to use this method
-     * @todo add quickexample in phpdoc
      *
      * @param object|array $object
      * @param array $fields
@@ -349,7 +349,7 @@ class Hydrator implements HydratorInterface
      * Get value from object
      *
      * @param object $entity
-     * @param \Doctrine\ORM\Mapping\ClassMetadata $meta
+     * @param ClassMetadata $meta
      * @param string $field
      * @return mixed
      */
