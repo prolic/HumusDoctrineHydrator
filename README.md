@@ -1,15 +1,23 @@
 ### Humus Doctrine Hydrator
 
-THIS RELEASE IS A DEVELOPMENT RELEASE AND NOT INTENDED FOR PRODUCTION USE.
-PLEASE USE AT YOUR OWN RISK.
-
 A Hydrator implementing Zend\Stdlib\Hydrator\HydratorInterface, completely based on Doctrine\Common
 
 - can return cloned object
 - let's you control what field should be extracted (recursively)
 - can flat single keys
 
-### Example
+## Requirements
+
+* Zend Framework 2
+* Doctrine\Common
+* Doctrine\ORM or Doctrine\ODM
+
+## Installation
+
+ 1.  Add `"prolic/humus-doctrine-hydrator": "dev-master"` to your `composer.json`
+ 2.  Run `php composer.phar install`
+
+## Example
 
 Let's assume you want to hydrate an array to an object, and then you want to extract all it's internals
 
@@ -59,9 +67,9 @@ $data = array(
 
 // we get the cloned address object,
 // just switch the clone argument in constructor to false, in order to get the real object back
-$address = $mapper->hydrate($data, new \Application\Entity\Contact());
+$address = $hydrator->hydrate($data, new \Application\Entity\Contact());
 
-$result = $mapper->extract($address);
+$result = $hydrator->extract($address);
 var_dump($result);
 
 // output:
@@ -107,15 +115,3 @@ array(6) {
 // in the constructor of the hydrator
 
 ```
-
-
-### Requirements
-
-* Zend Framework 2
-* Doctrine\Common
-* Doctrine\ORM or Doctrine\ODM
-
-### Installation
-
-Simply clone this project into your `./vendor/` directory and enable it in your
-`application.config.php` file.
