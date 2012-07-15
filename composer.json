@@ -4,7 +4,7 @@
     "description": "Humus Doctrine (recursive) Hydrator",
     "keywords": ["zf2", "phpunit", "humus"],
     "homepage": "https://github.com/prolic/HumusDoctrineHydrator",
-    "license": "BSD-3-Clause",
+    "license": "MIT",
     "authors": [
         {
             "name": "Sascha-Oliver Prolic",
