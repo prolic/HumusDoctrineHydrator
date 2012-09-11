@@ -2,7 +2,7 @@
     "name": "prolic/humus-doctrine-hydrator",
     "type": "library",
     "description": "Humus Doctrine (recursive) Hydrator",
-    "keywords": ["zf2", "phpunit", "humus"],
+    "keywords": ["zf2", "doctrine", "humus", "hydrator"],
     "homepage": "https://github.com/prolic/HumusDoctrineHydrator",
     "license": "MIT",
     "authors": [
@@ -13,8 +13,12 @@
     ],
     "require": {
         "php": ">=5.3.3",
-        "zendframework/zendframework": ">=2.0.0beta5",
+        "zendframework/zendframework": "2.*",
         "doctrine/common": ">2.2,<2.4-dev"
+    },
+    "suggest": {
+        "doctrine/mongodb-odm": "Doctrine MongoDB Object Document Mapper",
+        "doctrine/doctrine2": "Doctrine 2 ORM",
     },
     "autoload": {
         "psr-0": {

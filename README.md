@@ -8,9 +8,9 @@ A Hydrator implementing Zend\Stdlib\Hydrator\HydratorInterface, completely based
 
 ## Requirements
 
-* Zend Framework 2
-* Doctrine\Common
-* Doctrine\ORM or Doctrine\ODM
+ -  [ZendFramework 2.x](https://github.com/zendframework/zf2)
+ -  [Doctrine\Common >=2.2](https://github.com/doctrine/common)
+ -  [Doctrine\ORM >2.2](https://github.com/doctrine/doctrine2) or [Doctrine\ODM](https://github.com/doctrine/mongodb-odm)
 
 ## Installation
 
