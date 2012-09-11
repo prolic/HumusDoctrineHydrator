@@ -18,7 +18,7 @@
     },
     "suggest": {
         "doctrine/mongodb-odm": "Doctrine MongoDB Object Document Mapper",
-        "doctrine/doctrine2": "Doctrine 2 ORM",
+        "doctrine/doctrine2": "Doctrine 2 ORM"
     },
     "autoload": {
         "psr-0": {
