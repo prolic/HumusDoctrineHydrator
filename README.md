@@ -1,5 +1,10 @@
 ### Humus Doctrine Hydrator
 
+[![Dependency Status](https://www.versioneye.com/package/php:prolic:humus-doctrine-hydrator/badge.png)](https://www.versioneye.com/package/php:prolic:humus-doctrine-hydrator)
+[![Total Downloads](https://poser.pugx.org/prolic/humus-doctrine-hydrator/downloads.png)](https://packagist.org/packages/prolic/humus-doctrine-hydrator)
+[![Latest Stable Version](https://poser.pugx.org/prolic/humus-doctrine-hydrator/v/stable.png)](https://packagist.org/packages/prolic/humus-doctrine-hydrator)
+[![Latest Unstable Version](https://poser.pugx.org/prolic/humus-doctrine-hydrator/v/unstable.png)](https://packagist.org/packages/prolic/humus-doctrine-hydrator)
+
 A Hydrator implementing Zend\Stdlib\Hydrator\HydratorInterface, completely based on Doctrine\Common
 
 - can return cloned object
