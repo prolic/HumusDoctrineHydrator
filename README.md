@@ -13,7 +13,7 @@ A Hydrator implementing Zend\Stdlib\Hydrator\HydratorInterface, completely based
 
 ## Requirements
 
- -  [ZendFramework 2.x](https://github.com/zendframework/zf2)
+ -  [Zend Stdlib 2.2](https://github.com/zendframework/Component_ZendStdlib)
  -  [Doctrine\Common >=2.2](https://github.com/doctrine/common)
  -  [Doctrine\ORM >2.2](https://github.com/doctrine/doctrine2) or [Doctrine\ODM\MongoDB](https://github.com/doctrine/mongodb-odm)
 
